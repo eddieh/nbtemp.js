@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>embec.js</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="">
+<meta name="author" content="">
+<link href="style.css" rel="stylesheet">
+</head>
+<body>
+
+<header class="page-header">
+  <h1 style="">embec.js</h1>
+  <h2 style=""><span>Emb</span>edded <span>Ec</span>maScript - a
+  JavaScript templating engine</h2>
+</header>
+
+<section>
+  <h2>Intro</h2>
+  <p>Embec is dumb and probably isn't what you're looking for. It's a
+  template engine with no frills—it's just one small file and no
+  dependencies. It either runs in your environment, or it doesn't.</p>
+  <p>What can it do? All the normal templating stuff: interpolate,
+  flow control, includes, and blocks.</p>
+  <p>What it will never do? File IO, impose a stucture or a style on
+  your project, be packaged for NPM, touch the DOM or use any JS
+  feature restricted to a browser.</p>
+  <p>Don't use Embec! It isn't what you're looking for. I made it to
+  embed in an app I'm working on. Maybe it should be called
+  embembec.js. 🤷‍♂️</p>
+</section>
+
+<section>
+  <h2>API</h2>
+  <p>Create template functions using the <tt>Template</tt>
+  constructor.</p>
+  <dl>
+    <dt><tt>var t = new Template(source)</tt></dt>
+    <dd>A template function <tt>t()</tt></dd>
+
+    <dt><tt>var n = new Template(name, source)</tt></dt>
+    <dd>A template function <tt>n()</tt> named <tt>name</tt></dd>
+
+    <dt><tt>var c = new Template([src1, src2])</tt></dt>
+    <dd>A template function <tt>c()</tt> composed of <tt>src1</tt> and
+      by applying the blocks in <tt>src2</tt></dd>
+
+    <dt><tt>var nc = new Template(name, [src1, src2])</tt></dt>
+    <dd>A template function <tt>nc()</tt> named <tt>name</tt> composed
+      of <tt>src1</tt> and by applying the blocks
+      in <tt>src2</tt></dd>
+  </dl>
+
+  <p>Render templates by calling the function with an argument
+    object.</p>
+  <dl>
+    <dt><tt>var s = t(obj)</tt></dt>
+    <dd>A rendered template <tt>s</tt> as a string</dd>
+
+    <dt><tt>var r = t({ one: 1, two: 2 })</tt></dt>
+    <dd>A rendered template <tt>r</tt> as a string</dd>
+
+    <dt><tt>element.innerHTML = t({ one: 1, two: 2 })</tt></dt>
+    <dd>A rendered template inserted into <tt>element</tt></dd>
+  </dl>
+</section>
+
+<section>
+  <div class="row">
+    <div class="">
+      <h2>Tags</h2>
+      <p>Embec tags are where you tell the template compiler to stop
+      copying and to start doing some processing. All tags start
+      with <tt>&lt;%</tt> and end with <tt>%&gt;</tt>.</p>
+    </div>
+    <div class="">
+      <h3>Description</h3>
+      <p>Embec has several tags.</p>
+      <dl>
+        <dt><tt>&lt;% %&gt;</tt></dt>
+        <dd>Statement tag</dd>
+
+        <dt><tt>&lt;%= %&gt;</tt></dt>
+        <dd>Interpolate tag</dd>
+
+        <dt><tt>&lt;%# %&gt;</tt></dt>
+        <dd>Comment tag</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="row">
+
+    <div class="">
+      <h3>Example</h3>
+<script id="tag-example" type="x/embec">
+<% for (let item of [10, 20, 30]) { %>
+<p><%= item %></p>
+<% } %>
+</script>
+<pre id="tag-display" class=""></pre>
+    </div>
+
+    <div class="">
+      <h3>Output</h3>
+<pre id="tag-output"></pre>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <div class="row">
+    <div class="">
+      <h2>Environment</h2>
+      <p>The environment is the universe of things that can be
+      referenced from the current template. This includes the argument
+      object. The contents of the argument object are accessed through
+      the <tt>@</tt> symbol.</p>
+      <p>If you want to dump the environment place <tt>&lt;% env()
+      %&gt;</tt> somewhere in your template.</p>
+    </div>
+    <div class="">
+      <h3>Using the argument object</h3>
+      <p>Given an argument object <tt>arg</tt></p>
+<pre
+>var arg = {
+  a: 1,
+  b: 2,
+  c: [10, 20]
+}</pre>
+      <p>and a template function <tt>t()</tt> called with the argument
+      object <tt>t(arg)</tt></p>
+      <dl>
+        <dt><tt>@.a</tt></dt>
+        <dd>evaluates to <tt>1</tt></dd>
+
+        <dt><tt>@.b</tt></dt>
+        <dd>evaluates to <tt>2</tt></dd>
+
+        <dt><tt>@.c[0]</tt></dt>
+        <dd>evaluates to <tt>10</tt></dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="row">
+
+    <div class="">
+      <h3>Example</h3>
+<script id="env-example" type="x/embec"
+><% env() %></script>
+<script id="env-arguments"
+>var env_args = { a: 1, b: 2, c: [10, 20] }</script>
+<pre id="env-display" class=""></pre>
+    </div>
+
+    <div class="">
+      <h3>Output</h3>
+<pre id="env-output"></pre>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <h2>Arguments</h2>
+</section>
+
+<section>
+  <h2>Includes</h2>
+</section>
+
+<section>
+  <h2>Blocks</h2>
+</section>
+
+<section>
+  <h2>More examples</h2>
+</section>
+
+<section>
+  <h2>Tests</h2>
+</section>
+
+<section>
+  <h2>Acknowledgments</h2>
+</section>
+
+<section>
+<h2>License</h2>
+<pre class="no-style">
+MIT LICENSE
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+</pre>
+</section>
+
+<footer>
+<p class="copy">Copyright © 2021 Eddie Hillenbrand</p>
+</footer>
+
+<script src="embec.js"></script>
+<script>
+var examples = document.querySelectorAll('[id$="-example"]')
+for (let example of examples) {
+    let name = example.id.replace('-example', '')
+    let body = example.textContent
+    let display = document.getElementById(`${name}-display`)
+    display.innerText = body.trim()
+    let tmpl = new Template(body)
+    let output = document.getElementById(`${name}-output`)
+    let args = window[`${name}_args`]
+    output.innerText = tmpl(args)
+}
+</script>
+</body>
+</html>
