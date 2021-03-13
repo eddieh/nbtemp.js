@@ -1,3 +1,4 @@
+<!-- -*- eval: (electric-indent-local-mode -1) -*- -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,13 +8,14 @@
 <meta name="description" content="">
 <meta name="author" content="">
 <link href="style.css" rel="stylesheet">
+<script src="embec.js"></script>
 </head>
 <body>
 
 <header class="page-header">
   <h1 style="">embec.js</h1>
   <h2 style=""><span>Emb</span>edded <span>Ec</span>maScript - a
-  JavaScript templating engine</h2>
+    JavaScript templating engine</h2>
 </header>
 
 <section>
@@ -94,20 +96,23 @@
 
     <div class="">
       <h3>Example</h3>
-<script id="tag-example" type="x/embec">
-<% for (let item of [10, 20, 30]) { %>
-<p><%= item %></p>
-<% } %>
-</script>
-<pre id="tag-display" class=""></pre>
+      <pre id="tag_display" class=""></pre>
     </div>
 
     <div class="">
       <h3>Output</h3>
-<pre id="tag-output"></pre>
+      <pre id="tag_output"></pre>
     </div>
-
   </div>
+
+<script>
+var source =
+`<% for (let item of [10, 20, 30]) { %>
+<p><%= item %></p>
+<% } %>`
+tag_display.innerText = source
+tag_output.innerText = (new Template(source))()
+</script>
 </section>
 
 <section>
@@ -124,12 +129,7 @@
     <div class="">
       <h3>Using the argument object</h3>
       <p>Given an argument object <tt>arg</tt></p>
-<pre
->var arg = {
-  a: 1,
-  b: 2,
-  c: [10, 20]
-}</pre>
+      <pre id="env_display0"></pre>
       <p>and a template function <tt>t()</tt> called with the argument
       object <tt>t(arg)</tt></p>
       <dl>
@@ -149,19 +149,34 @@
 
     <div class="">
       <h3>Example</h3>
-<script id="env-example" type="x/embec"
-><% env() %></script>
-<script id="env-arguments"
->var env_args = { a: 1, b: 2, c: [10, 20] }</script>
-<pre id="env-display" class=""></pre>
+      <pre id="env_display1"></pre>
+      <pre id="env_display2"></pre>
     </div>
 
     <div class="">
       <h3>Output</h3>
-<pre id="env-output"></pre>
+      <pre id="env_output"></pre>
     </div>
 
   </div>
+
+<script>
+var src1 = `<% env() %>`
+var argt = `var arg = {
+    a: 1,
+    b: 2,
+    c: [10, 20]
+}`
+var src2 = argt + `
+var tmpl = new Template(src1)
+var output = tmpl(arg)`
+eval(src2)
+env_display0.innerText = argt
+env_display1.innerText = src1
+env_display2.innerText = src2
+env_output.innerText = output
+</script>
+
 </section>
 
 <section>
@@ -174,6 +189,47 @@
 
 <section>
   <h2>Blocks</h2>
+
+  <div class="row">
+    <div>
+      <h3>The special <tt>$content</tt> block</h3>
+      <p>Any conent outside of a block region will go in the
+      designated content block.</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <div>
+      <h3>Example template1.html</h3>
+      <pre id="content_display1" class=""></pre>
+    </div>
+    <div>
+      <pre id="content_output1" style="display: none" class=""></pre>
+    </div>
+  </div>
+  <div class="row">
+    <div>
+      <h3>Example template2.html</h3>
+      <pre id="content_display2" class=""></pre>
+    </div>
+    <div>
+      <h3>Output</h3>
+      <pre id="content_output2" class=""></pre>
+    </div>
+  </div>
+
+<script>
+var src1 = `<% block('region1') %>
+<% end('region1') %>
+<% $content %>`
+var src2 = `Outside the block.
+<% block('region1') %>
+Inside region one.
+<% end('region1') %>`
+content_display1.innerText = src1
+content_display2.innerText = src2
+content_output2.innerText = (new Template([src1, src2]))()
+</script>
 </section>
 
 <section>
@@ -218,19 +274,5 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 <p class="copy">Copyright © 2021 Eddie Hillenbrand</p>
 </footer>
 
-<script src="embec.js"></script>
-<script>
-var examples = document.querySelectorAll('[id$="-example"]')
-for (let example of examples) {
-    let name = example.id.replace('-example', '')
-    let body = example.textContent
-    let display = document.getElementById(`${name}-display`)
-    display.innerText = body.trim()
-    let tmpl = new Template(body)
-    let output = document.getElementById(`${name}-output`)
-    let args = window[`${name}_args`]
-    output.innerText = tmpl(args)
-}
-</script>
 </body>
 </html>
