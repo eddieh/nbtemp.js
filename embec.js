@@ -63,15 +63,21 @@ var Template = (function () {
         if (body === undefined)
             return ''
         let _body = '', idx = 0, prev = 0
+        let begin = null, end = null
         let beginMatcher = RegExp(
             `<%\\s*block\\s*\\(\\s*${blockname}\\s*\\)\\s*%>`)
         let endMatcher = RegExp(
             `<%\\s*end\\s*\\(\\s*${blockname}\\s*\\)\\s*%>`)
 
         let beginMatch = body.match(beginMatcher)
-        let begin = beginMatch.index + beginMatch[0].length
+        if (beginMatch)
+            begin = beginMatch.index //+ beginMatch[0].length
         let endMatch = body.match(endMatcher)
-        let end = endMatch.index
+        if (endMatch)
+            end = endMatch.index + endMatch[0].length
+
+        if (begin ? !end :end)
+            throw `unmatched block/end for ${blockname}`
 
         let matcher = RegExp('(<%\\s*block\s*\\([\\s\\S]+?\\)\\s*%>)' + '|' +
             '(<%\\s*end\\s*\\([\s\S]+?\\)\\s*%>)|$', 'g')
@@ -99,13 +105,13 @@ var Template = (function () {
         let bodies = []
         let _cont = ""
 
-        if (body === undefined)
-            return _body
-
         if (Array.isArray(body)) {
             bodies = body
             body = bodies[0]
         }
+
+        if (body === undefined)
+            return _body
 
         if (depth === undefined)
             depth = 0
@@ -152,10 +158,13 @@ var Template = (function () {
                         let _block = beginBlock(bb, bodies.slice(1))
                         _special += "{\n"
                         _special += compile(_block.block, depth + 1)
+                        //_special += compile(bodies.slice(2), depth + 2)
                         _cont += compile(_block.body, depth + 1)
+                        //_cont += compile(bodies.slice(2), depth + 2)
                         matchedSpecial = true
                     } else if (be) {
-                        _special += endBlock(be, depth + 1)
+                        if (bodies.slice(1)[0])
+                            _special += endBlock(be, depth + 1)
                         _special += "\n}\n"
                         matchedSpecial = true
                     }
