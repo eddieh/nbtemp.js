@@ -71,8 +71,7 @@ var Template = (function () {
         var block = {}
         var retStack = []
         var bodyStack = []
-
-        var Ctx = []
+        var cntBlock = false
 
         function LABEL(lbl) {
             let ret = ''
@@ -85,12 +84,11 @@ var Template = (function () {
         function SCP(d) { return `__$s${d === undefined ? depth : d}` }
         function FUN(d) { return `__$f${d === undefined ? depth : d}` }
         function BLK(name, d) { return `__$blk_${name}${d === undefined ? depth : d }` }
+        function CNT(d) { return `__$cnt${d}` }
 
         function Pre(name, source) {
             retStack.push(RET())
             bodyStack.push(body)
-            //Ctx.push({ ret: RET(), block: null, depth: 0, index: 0 })
-
             Compile(Array.isArray(source) ? source : [source])
             body.push(`${LABEL('done')} return ${retStack.first()}`)
             console.dir(body)
@@ -102,28 +100,42 @@ var Template = (function () {
             var ret = retStack.last()
 
             body.push(`${LABEL('comp')} /* src${depth} */`)
-            body.push(`${LABEL('decl')} var ${ret} = ''`)
+            if (!cntBlock)
+                body.push(`${LABEL('decl')} var ${ret} = ''`)
 
+            cntBlock = false
             index = 0
             source.replace(tagMatcher, Tag)
 
             if (sources.slice(1)[0]) {
-                NextSource()
+                let d = depth
+                let c = cntBlock
+
+                NextSource(d, c)
                 Compile(sources.slice(1))
-                AppendLastSource()
+                AppendLastSource(d, c)
             }
         }
 
-        function NextSource() {
+        function NextSource(d, c) {
             depth++
-            retStack.push(RET())
-            bodyStack.push(body)
+            if (c) {
+                BeginContent('$content', d, true)
+            } else {
+                retStack.push(RET())
+                bodyStack.push(body)
+            }
         }
 
-        function AppendLastSource() {
-            var retPrev = retStack.pop()
-            var ret = retStack.last()
-            body.push(`${LABEL('appd')} ${ret} += ${retPrev}`)
+        function AppendLastSource(d, c) {
+            if (c) {
+                EndContent('$content', d, true)
+            } else {
+                var retPrev = retStack.pop()
+                var ret = retStack.last()
+                body = bodyStack.pop()
+                body.push(`${LABEL('appd')} ${ret} += ${retPrev}`)
+            }
         }
 
         function Tag(match, interpolate, comment, escape, evaluate, offset, str) {
@@ -222,8 +234,34 @@ var Template = (function () {
 
         function Content(name) {
             // set up for accumulating srcₙ₊₁ content
-            //BeginBlock(name)
-            //EndBlock(name)
+            let d = depth
+            BeginContent(name, d)
+            EndContent(name, d)
+            cntBlock = true
+        }
+
+        function BeginContent(name, d, decl) {
+            var cnt = CNT(d)
+            name = `${name}${d}`
+            retStack.push(cnt)
+            BlockHead(name)
+            if (decl)
+                body.push(`${LABEL('bcnt')} var ${cnt} = ''`)
+        }
+
+        function EndContent(name, d, append) {
+            var cnt = retStack.pop()
+            var ret = retStack.last()
+            name = `${name}${d}`
+            body = bodyStack.pop()
+            BlockTail(name)
+            if (block[name].prev)
+                ret = block[name].prev
+            if (append) {
+                block[name].prev = cnt
+                body.unshift(`${LABEL('ecnt')} ${ret} += ${cnt}`)
+            }
+            body = bodyStack.pop()
         }
 
         function FunctionCall(match, identifier, args, offset, str) {
@@ -279,12 +317,18 @@ var Template = (function () {
 //     `<% block('one') %>xyz<% end('one') %>`
 // ])
 
+// var t = new Template([
+//     `<% block('one') %>abc<% end('one') %>`,
+//     `<% block('one') %>123<% end('one') %>`,
+//     `xyz`
+// ])
 
-var t = new Template([
-    `<% block('one') %>abc<% end('one') %>`,
-    `<% block('one') %>123<% end('one') %>`,
-    `xyz`
-])
+// var t = new Template([
+// `<% block('one') %>111<% end('one') %>
+// <% $content %>
+// <% block('two') %>222<% end('two') %>`
+// ])
+// console.log(t())
 
 // var t = new Template([
 // `<% block('one') %>111<% end('one') %>
