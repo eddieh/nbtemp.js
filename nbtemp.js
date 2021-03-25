@@ -27,7 +27,14 @@ var Template = (function () {
         blocks.content.source
     ].join('|') + '|$', 'g')
 
-    var func = /[^\.](\w+?)\(([\s\S]+?)\)/g
+    var funcs = {
+        env: /env\s*\(([\s\S]*)\)/,
+        include: /include\s*\(([\s\S]+?)\)/,
+    }
+    var funcMatcher = RegExp([
+        funcs.env.source,
+        funcs.include.source,
+    ].join('|'))
 
     var escapes = {
         "'": "'",
@@ -89,9 +96,12 @@ var Template = (function () {
         function Pre(name, source) {
             retStack.push(RET())
             bodyStack.push(body)
+            body.push(`${LABEL('decl')} var ${SCP(0)} = arguments[0]`)
+            body.push(`${LABEL('decl')} var ${FUN(0)} = {}`)
+            for (let name in Template.builtins)
+                body.push(`${LABEL('decl')} ${FUN(0)}.${name} = Template.builtins.${name}`)
             Compile(Array.isArray(source) ? source : [source])
             body.push(`${LABEL('done')} return ${retStack.first()}`)
-            console.dir(body)
             return body.flat(Infinity).join('')
         }
 
@@ -110,7 +120,6 @@ var Template = (function () {
             if (sources.slice(1)[0]) {
                 let d = depth
                 let c = cntBlock
-
                 NextSource(d, c)
                 Compile(sources.slice(1))
                 AppendLastSource(d, c)
@@ -162,7 +171,7 @@ var Template = (function () {
 
         function Interpolate(str) {
             var ret = retStack.last()
-            return `${LABEL('intp')} ${ret} += '' + ${scopeReplacer(str, SCP())}`
+            return `${LABEL('intp')} ${ret} += '' + ${scopeReplacer(str, SCP(0))}`
         }
 
         function Comment(str) {
@@ -174,17 +183,29 @@ var Template = (function () {
         }
 
         function Evaluate(str) {
-            str.replace(blockMatcher, Block)
-            //body.push(`${LABEL('eval')}`)
+            var hack = { match: false }
+            str.replace(blockMatcher, Block.bind(hack))
+            if (!hack.match) {
+                hack = { match: false }
+                str.replace(funcMatcher, FunctionCall.bind(hack))
+            }
+            if (!hack.match)
+                body.push(`${LABEL('eval')} ${scopeReplacer(str, SCP(0))}`)
         }
 
         function Block(match, beginBlock, endBlock, content, offset, str) {
-            if (beginBlock)
+            if (beginBlock) {
                 BeginBlock(beginBlock.replace(/['"]/g, ''))
-            if (endBlock)
+                this.match = true
+            }
+            if (endBlock) {
                 EndBlock(endBlock.replace(/['"]/g, ''))
-            if (content)
+                this.match = true
+            }
+            if (content) {
                 Content(content)
+                this.match = true
+            }
             return match
         }
 
@@ -264,7 +285,21 @@ var Template = (function () {
             body = bodyStack.pop()
         }
 
-        function FunctionCall(match, identifier, args, offset, str) {
+        function FunctionCall(match, env, include, offset, str) {
+            console.dir(arguments)
+            var ret = retStack.last()
+            var funccall = '/* error */'
+            if (env) {
+                funccall = `${FUN(0)}.env.apply(this, arguments)`
+                body.push(`${LABEL('func')} ${ret} += ${funccall}`)
+                this.match = true
+            }
+            if (include) {
+                funccall = `${FUN(0)}.include(${include}).apply(this, arguments)`
+                body.push(`${LABEL('func')} ${ret} += ${funccall}`)
+                this.match = true
+            }
+            return match
         }
 
         return Pre(name, source)
@@ -289,107 +324,9 @@ var Template = (function () {
 
     Template.templates = {}
     Template.builtins = {}
-    Template.builtins.put = function(a) { return a ? '' + a : '' }
-    Template.builtins.escape = function() { return '' }
+    // Template.builtins.put = function(a) { return a ? '' + a : '' }
+    // Template.builtins.escape = function() { return '' }
     Template.builtins.env = env
     Template.builtins.include = include
     return Template
 }).call(this)
-
-// new Template(``)
-
-// new Template(`<%= null; %>a<% null; %>`)
-
-//new Template(`<% block('one') %>abc<% end('one') %>`)
-
-// new Template([`<% block('one') %>abc<% end('one') %>`,
-// `<% block('one') %>123<% end('one') %>`])
-
-// var t = new Template([
-//     `<% block('one') %>abc<% end('one') %>`,
-//     `<% block('one') %>123<% end('one') %>`,
-//     `<% block('one') %>xyz<% end('one') %>`
-// ])
-
-// var t = new Template([
-//     `<% block('one') %>abc<% end('one') %>`,
-//    `123`,
-//     `<% block('one') %>xyz<% end('one') %>`
-// ])
-
-// var t = new Template([
-//     `<% block('one') %>abc<% end('one') %>`,
-//     `<% block('one') %>123<% end('one') %>`,
-//     `xyz`
-// ])
-
-// var t = new Template([
-// `<% block('one') %>111<% end('one') %>
-// <% $content %>
-// <% block('two') %>222<% end('two') %>`
-// ])
-// console.log(t())
-
-// var t = new Template([
-// `<% block('one') %>111<% end('one') %>
-// <% $content %>
-// <% block('two') %>222<% end('two') %>`
-// ,
-// `front<% block('one') %>aaa<% end('one') %>middle
-// <% block('two') %>bbb<% end('two') %>back`
-// ])
-// console.log(t())
-
-// var t = new Template([
-// `<% block('one') %>111<% end('one') %>
-// <% $content %>
-// <% block('two') %>222<% end('two') %>`
-// ,
-// `front<% block('one') %>aaa<% end('one') %>middle
-// <% block('two') %>bbb<% end('two') %>back`
-// ,
-// `xyz`
-// ])
-// console.log(t())
-
-// var t = new Template([
-// `<% block('one') %>111<% end('one') %>
-// <% $content %>
-// <% block('two') %>222<% end('two') %>`
-// ,
-// `front<% block('one') %>aaa<% end('one') %>middle
-// <% block('two') %>bbb<% end('two') %>back
-// <% $content %>`
-// ])
-// console.log(t())
-
-// var t = new Template([
-// `<% block('one') %>111<% end('one') %>
-// <% $content %>
-// <% block('two') %>222<% end('two') %>`
-// ,
-// `front<% block('one') %>aaa<% end('one') %>middle
-// <% block('two') %>bbb<% end('two') %>back
-// <% $content %>`
-// ,
-// `xyz`
-// ])
-// console.log(t())
-
-// var t = new Template([
-//     `<% block('one') %><% end('one') %>`
-// ])
-
-// var t = new Template([
-//     `<% $content %>`,
-// ])
-
-// var t = new Template([
-//     `<% block('one') %><% end('one') %>`,
-//     `<% block('one') %><% end('one') %>`
-// ])
-
-// var t = new Template([
-//     `<% $content %>`,
-//     `<% $content %>`,
-// ])
