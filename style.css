@@ -24,9 +24,8 @@ h1 {
     letter-spacing: -.05em;
     border-bottom: 3px solid #BBB;
 }
-h2 span {
-    color: #3cc;
-}
+h1 span { float: right; }
+h2 span { color: #3cc; }
 
 section {
     padding: 2em 0;

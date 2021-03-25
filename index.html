@@ -3,24 +3,24 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>embec.js</title>
+<title>nbtemp.js</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="">
 <meta name="author" content="">
 <link href="style.css" rel="stylesheet">
-<script src="embec.js"></script>
+<script src="nbtemp.js"></script>
 </head>
 <body>
 
 <header class="page-header">
-  <h1 style="">embec.js</h1>
-  <h2 style=""><span>Emb</span>edded <span>Ec</span>maScript - a
-    JavaScript templating engine</h2>
+  <h1>nbtemp.js <span>🚫🐮</span></h1>
+  <h2><span>N</span>o <span>B</span>ull <span>Temp</span>late - a
+    JavaScript templating engine with no bull</h2>
 </header>
 
 <section>
   <h2>Intro</h2>
-  <p>Embec is dumb and probably isn't what you're looking for. It's a
+  <p>Nbtemp is dumb and probably isn't what you're looking for. It's a
   template engine with no frills—it's just one small file and no
   dependencies. It either runs in your environment, or it doesn't.</p>
   <p>What can it do? All the normal templating stuff: interpolate,
@@ -28,9 +28,8 @@
   <p>What it will never do? File IO, impose a stucture or a style on
   your project, be packaged for NPM, touch the DOM or use any JS
   feature restricted to a browser.</p>
-  <p>Don't use Embec! It isn't what you're looking for. I made it to
-  embed in an app I'm working on. Maybe it should be called
-  embembec.js. 🤷‍♂️</p>
+  <p>Don't use Nbtemp! It isn't what you're looking for. I made it to
+  embed in an app I'm working on.</p>
 </section>
 
 <section>
@@ -72,13 +71,13 @@
   <div class="row">
     <div class="">
       <h2>Tags</h2>
-      <p>Embec tags are where you tell the template compiler to stop
+      <p>Nbtemp tags are where you tell the template compiler to stop
       copying and to start doing some processing. All tags start
       with <tt>&lt;%</tt> and end with <tt>%&gt;</tt>.</p>
     </div>
     <div class="">
       <h3>Description</h3>
-      <p>Embec has several tags.</p>
+      <p>Nbtemp has several tags.</p>
       <dl>
         <dt><tt>&lt;% %&gt;</tt></dt>
         <dd>Statement tag</dd>
@@ -133,13 +132,13 @@ tag_output.innerText = (new Template(source))()
       <p>and a template function <tt>t()</tt> called with the argument
       object <tt>t(arg)</tt></p>
       <dl>
-        <dt><tt>@.a</tt></dt>
+        <dt><tt>@a</tt></dt>
         <dd>evaluates to <tt>1</tt></dd>
 
-        <dt><tt>@.b</tt></dt>
+        <dt><tt>@b</tt></dt>
         <dd>evaluates to <tt>2</tt></dd>
 
-        <dt><tt>@.c[0]</tt></dt>
+        <dt><tt>@c[0]</tt></dt>
         <dd>evaluates to <tt>10</tt></dd>
       </dl>
     </div>
@@ -237,7 +236,224 @@ content_output2.innerText = (new Template([src1, src2]))()
 </section>
 
 <section>
+<style>
+ul { list-style:none; padding-inline-start: 1em; }
+ul li > span { padding-left: 1em; }
+details:focus, summary:focus { outline: none; }
+.pass::before { content: "✓ "; color: green; }
+.fail::before { content: "✗ "; color: red; }
+</style>
+
   <h2>Tests</h2>
+  <ul class="testReport" id="domOutput"></ul>
+
+<script id="testTmplSrc1" type="x/nbtemp">
+<% block('one') %><% end('one') %>
+<% block('two') %><% end('two') %>
+</script>
+
+<script id="testTmplSrc2" type="x/nbtemp">
+</script>
+
+<script id="testTmplSrc2wb1" type="x/nbtemp">
+<% block('one') %>1<% end('one') %>
+</script>
+
+<script id="testTmplSrc2wb1b2" type="x/nbtemp">
+<% block('one') %>1<% end('one') %>
+<% block('two') %>2<% end('two') %>
+</script>
+
+<script id="testTmplSrc3" type="x/nbtemp">
+<% block('one') %>one<% end('one') %>
+<% block('two') %>two<% end('two') %>
+</script>
+
+<script>
+(function (fnNS, testNS) {
+    var suites = []
+
+    if (testNS === undefined)
+        testNS = fnNS
+
+    if (fnNS === undefined)
+        fnNS = this
+
+    function describe(name, behaviors) {
+        suites.push({
+            name: name,
+            behaviors: [],
+            passed: true,
+        })
+        behaviors()
+    }
+
+    function it(description, behavior) {
+        var suite = suites.pop()
+        suite.behaviors.push({
+            description: description,
+            behavior: behavior,
+            passed: true,
+            failReason: null,
+            asserts: []
+        })
+        suites.push(suite)
+    }
+
+    function assert(condition, description) {
+        this.asserts.push({
+            passed: condition,
+            description: description
+        })
+        this.passed &&= condition
+    }
+
+    function run() {
+        for (var suite of suites) {
+            for (var behavior of suite.behaviors) {
+                try {
+                    fnNS.assert = assert.bind(behavior)
+                    behavior.behavior()
+                } catch (e) {
+                    behavior.failReason = e
+                    behavior.passed = false
+                }
+                suite.passed &&= behavior.passed
+            }
+        }
+    }
+
+    // reportCB(type, name/desc, passed)
+    function report(reportCB) {
+        for (var suite of suites) {
+            reportCB('suite', suite.name, suite.passed)
+            for (var behavior of suite.behaviors) {
+                reportCB('behavior', behavior.description, behavior.passed)
+                if (behavior.failReason)
+                    reportCB('error', behavior.failReason, false)
+                for (var assert of behavior.asserts)
+                    reportCB('assert', assert.description, assert.passed)
+            }
+        }
+    }
+
+    function stats() {
+    }
+
+    function reset() {
+        suites = []
+    }
+
+    fnNS.describe = describe
+    fnNS.it = it
+    fnNS.assert = assert
+
+    testNS.run = run
+    testNS.report = report
+    testNS.stats = stats
+    testNS.reset = reset
+
+})(this, this['Units'] = {})
+</script>
+<script>
+Units.reset()
+describe('multiple blocks', function () {
+    it('handles blocks w/o second template', function () {
+        let src = testTmplSrc1.textContent
+        let tmpl = new Template(src)
+        assert(typeof tmpl() == 'string', 'renders to string')
+    })
+    it('handles a second template w/o blocks', function () {
+        let src1 = testTmplSrc1.textContent
+        let src2 = testTmplSrc2.textContent
+        let tmpl = new Template([src1, src2])
+        assert(typeof tmpl() == 'string', 'renders to string')
+    })
+    it('handles a second template missing block', function () {
+        let src1 = testTmplSrc1.textContent
+        let src2 = testTmplSrc2wb1.textContent
+        let tmpl = new Template([src1, src2])
+        assert(typeof tmpl() == 'string', 'renders to string')
+    })
+    it('handles a second template with all blocks', function () {
+        let src1 = testTmplSrc1.textContent
+        let src2 = testTmplSrc2wb1b2.textContent
+        let tmpl = new Template([src1, src2])
+        assert(typeof tmpl() == 'string', 'renders to string')
+    })
+    it('handles three templates', function () {
+        let src1 = testTmplSrc1.textContent
+        let src2 = testTmplSrc2wb1b2.textContent
+        let src3 = testTmplSrc3.textContent
+        let tmpl = new Template([src1, src2, src3])
+        assert(typeof tmpl() == 'string', 'renders to string')
+    })
+})
+Units.run()
+var curReport = domOutput
+var curSuite = null
+var curBehavior = null
+Units.report(function(type, name, passed) {
+    function className(passed) {
+        return `${passed ? 'pass' : 'fail'}`
+    }
+    var domBuilder = {
+        suite: function () {
+            let li = document.createElement('li')
+            let details = document.createElement('details')
+            let summary = document.createElement('summary')
+            let span = document.createElement('span')
+            let ul = document.createElement('ul')
+            li.className = type
+            span.className = className(passed)
+            span.innerText = name
+            summary.appendChild(span)
+            details.appendChild(summary)
+            details.appendChild(ul)
+            details.open = !passed
+            li.appendChild(details)
+            curSuite = ul
+            curReport.appendChild(li)
+        },
+        behavior: function () {
+            let li = document.createElement('li')
+            let details = document.createElement('details')
+            let summary = document.createElement('summary')
+            let span = document.createElement('span')
+            let ul = document.createElement('ul')
+            li.className = type
+            span.className = className(passed)
+            span.innerText = name
+            summary.appendChild(span)
+            details.appendChild(summary)
+            details.appendChild(ul)
+            details.open = !passed
+            li.appendChild(details)
+            curBehavior = ul
+            curSuite.appendChild(li)
+        },
+        assert: function () {
+            let li = document.createElement('li')
+            let span = document.createElement('span')
+            li.className = type
+            span.className = className(passed)
+            span.innerText = name
+            li.appendChild(span)
+            curBehavior.appendChild(li)
+        },
+        error: function () {
+            let li = document.createElement('li')
+            let span = document.createElement('span')
+            li.className = type
+            span.className = className(passed)
+            span.innerText = name
+            li.appendChild(span)
+            curBehavior.appendChild(li)
+        },
+    }
+    domBuilder[type]()
+})
+</script>
 </section>
 
 <section>
