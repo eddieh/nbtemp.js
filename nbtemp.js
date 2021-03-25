@@ -28,7 +28,7 @@ var Template = (function () {
     ].join('|') + '|$', 'g')
 
     var funcs = {
-        env: /env\s*\(([\s\S]*)\)/,
+        env: /(env)\s*\([\s\S]*\)/,
         include: /include\s*\(([\s\S]+?)\)/,
     }
     var funcMatcher = RegExp([
